@@ -1,26 +1,44 @@
-import settings
+import os
 import discord
 from discord.ext import commands
+from colorama import Fore, Style, Back
+from dotenv import load_dotenv
+import time
+import platform
 
-logger = settings.logging.getLogger("bot")
 
+load_dotenv()
 
-def run():
-    intents = discord.Intents.default()
-
-    bot = commands.Bot(command_prefix="!", intents=intents)
-
-    @bot.event
-    async def on_ready():
-        logger.info(f"User: {bot.user} (ID: {bot.user.id})")
-        logger.info(f"Guild ID: {bot.guilds[0].id}")
-        bot.tree.copy_global_to(guild=settings.GUILDS_ID)
-        await bot.tree.sync(guild=settings.GUILDS_ID)\
+client = commands.Bot(command_prefix="!", intents=discord.Intents.all())\
 
 
 
-    bot.run(settings.Discord_API_SECRET, root_logger=True)
+
+@client.event
+async def on_ready():
+    prfx = (Back.BLACK + Fore.GREEN + time.strftime("%H:%M:%S UTC", time.localtime()) + Back.RESET + Fore.WHITE + Style.BRIGHT)
+    print(prfx + "Logged as " + Fore.YELLOW + client.user.name)
+    print(prfx + "BOT ID " + Fore.YELLOW + str(client.user.id))
+    print(prfx + "Discord.py version " + Fore.YELLOW + str(discord.__version__))
+    print(prfx + "Python version " + Fore.YELLOW + str(platform.python_version()))
+    synced = await client.tree.sync()
+    print(prfx + "Slash Command synced " + Fore.YELLOW + str(len(synced))+" Commands")
 
 
-if __name__ == "__main__":
-    run()
+@client.tree.command(name="zapisy", description="Zapisy na mecz")
+async def signup(interaction: discord.Interaction, title: str, date: str, time: str, vs: str, map: str, tactics_url:str):
+    embed = discord.Embed(title=title, description="Zapisy na mecz", color=discord.Color.blue())
+    embed.add_field(name="Date", value=date, inline=False)
+    embed.add_field(name="Time", value=time, inline=False)
+    embed.add_field(name="Versus", value=vs, inline=False)
+    embed.add_field(name="Map", value=map, inline=False)
+    embed.add_field(name="Taktyka", value=f"[Link]({tactics_url})",inline=False)
+    await interaction.message.add_reaction("👍")
+    await interaction.message.add_reaction("👎")
+    await interaction.message.add_reaction("✋")
+
+    await interaction.response.send(embed=embed, ephemeral=True)
+
+client.run(os.getenv('DISCORD_API_TOKEN'))
+
+
