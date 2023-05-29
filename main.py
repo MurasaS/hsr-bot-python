@@ -1,44 +1,125 @@
 import os
 import discord
+import interactions
+from discord.ui import Button, View
 from discord.ext import commands
 from colorama import Fore, Style, Back
 from dotenv import load_dotenv
 import time
 import platform
 
-
 load_dotenv()
 
-client = commands.Bot(command_prefix="!", intents=discord.Intents.all())\
+Token = os.getenv('DISCORD_API_TOKEN')
+GUILD_ID = int(os.getenv('GUILD'))
+
+client = commands.Bot(command_prefix="!", intents=discord.Intents.all())
+
+
+
+
+class Buttons(discord.ui.View):
+    def __init__(self, *, timeout=None):
+        super().__init__(timeout=timeout or 180)
+
+        self.voted_users = {}
+        self.upvote_count = 0
+        self.downvote_count = 0
+
+    @discord.ui.button(
+        label="Yes", style=discord.ButtonStyle.success, emoji="👍"
+    )
+    async def upvote_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        if interaction.user.id in self.voted_users:
+            previous_vote = self.voted_users[interaction.user.id]
+            if previous_vote == "downvote":
+                self.downvote_count -= 1
+            elif previous_vote == "upvote":
+                self.upvote_count -= 1
+
+        if interaction.user.id not in self.voted_users or self.voted_users[interaction.user.id] == "downvote":
+            self.upvote_count += 1
+            self.voted_users[interaction.user.id] = "upvote"
+            await interaction.response.send_message("Upvoted!", ephemeral=True)
+        else:
+            del self.voted_users[interaction.user.id]
+            await interaction.response.send_message("Vote removed!", ephemeral=True)
+
+        embed = interaction.message.embeds[0]
+        upvote_value = f"Votes: {self.upvote_count}\nVoted by: {', '.join([str(interaction.guild.get_member(user_id)) for user_id, vote in self.voted_users.items() if vote == 'upvote'])}"
+        downvote_value = f"Votes: {self.downvote_count}\nVoted by: {', '.join([str(interaction.guild.get_member(user_id)) for user_id, vote in self.voted_users.items() if vote == 'downvote'])}"
+        embed.set_field_at(0, name="Yes", value=upvote_value, inline=False)
+        embed.set_field_at(1, name="No", value=downvote_value, inline=False)
+        await interaction.message.edit(embed=embed)
+
+    @discord.ui.button(label="No", style=discord.ButtonStyle.danger, emoji="👎")
+    async def downvote_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        if interaction.user.id in self.voted_users:
+            previous_vote = self.voted_users[interaction.user.id]
+            if previous_vote == "upvote":
+                self.upvote_count -= 1
+            elif previous_vote == "downvote":
+                self.downvote_count -= 1
+
+        if interaction.user.id not in self.voted_users or self.voted_users[interaction.user.id] == "upvote":
+            self.downvote_count += 1
+            self.voted_users[interaction.user.id] = "downvote"
+            await interaction.response.send_message("Downvoted!", ephemeral=True)
+        else:
+            del self.voted_users[interaction.user.id]
+            await interaction.response.send_message("Vote removed!", ephemeral=True)
+
+        embed = interaction.message.embeds[0]
+        upvote_value = f"Votes: {self.upvote_count}\nVoted by: {', '.join([str(interaction.guild.get_member(user_id)) for user_id, vote in self.voted_users.items() if vote == 'upvote'])}"
+        downvote_value = f"Votes: {self.downvote_count}\nVoted by: {', '.join([str(interaction.guild.get_member(user_id)) for user_id, vote in self.voted_users.items() if vote == 'downvote'])}"
+        embed.set_field_at(0, name="Yes", value=upvote_value, inline=False)
+        embed.set_field_at(1, name="No", value=downvote_value, inline=False)
+        await interaction.message.edit(embed=embed)
+
+    @discord.ui.button(label="Delete Post", style=discord.ButtonStyle.danger, emoji="🗑️")
+    async def delete_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        await interaction.message.delete()
+        await interaction.response.send_message("Post deleted!", ephemeral=True)
+
+
+
+
+
+
 
 
 
 
 @client.event
 async def on_ready():
-    prfx = (Back.BLACK + Fore.GREEN + time.strftime("%H:%M:%S UTC", time.localtime()) + Back.RESET + Fore.WHITE + Style.BRIGHT)
+    prfx = (Back.BLACK + Fore.GREEN + time.strftime("%H:%M:%S UTC ",
+                                                    time.localtime()) + Back.RESET + Fore.WHITE + Style.BRIGHT)
     print(prfx + "Logged as " + Fore.YELLOW + client.user.name)
     print(prfx + "BOT ID " + Fore.YELLOW + str(client.user.id))
     print(prfx + "Discord.py version " + Fore.YELLOW + str(discord.__version__))
     print(prfx + "Python version " + Fore.YELLOW + str(platform.python_version()))
     synced = await client.tree.sync()
-    print(prfx + "Slash Command synced " + Fore.YELLOW + str(len(synced))+" Commands")
+    print(prfx + "Slash Command synced " + Fore.YELLOW + str(len(synced)) + " Commands")
 
 
 @client.tree.command(name="zapisy", description="Zapisy na mecz")
-async def signup(interaction: discord.Interaction, title: str, date: str, time: str, vs: str, map: str, tactics_url:str):
+async def signup(interaction: discord.Interaction, title: str, date: str, time: str, map: str,
+                 tactics_url: str):
     embed = discord.Embed(title=title, description="Zapisy na mecz", color=discord.Color.blue())
-    embed.add_field(name="Date", value=date, inline=False)
+    embed.add_field(name="Date and Vs", value=date, inline=False)
     embed.add_field(name="Time", value=time, inline=False)
-    embed.add_field(name="Versus", value=vs, inline=False)
     embed.add_field(name="Map", value=map, inline=False)
-    embed.add_field(name="Taktyka", value=f"[Link]({tactics_url})",inline=False)
-    await interaction.message.add_reaction("👍")
-    await interaction.message.add_reaction("👎")
-    await interaction.message.add_reaction("✋")
-
-    await interaction.response.send(embed=embed, ephemeral=True)
-
-client.run(os.getenv('DISCORD_API_TOKEN'))
+    embed.add_field(name="Taktyka", value=f"[Link]({tactics_url})", inline=False)
 
 
+
+    await interaction.response.send_message(embed=embed, view=Buttons())
+
+
+client.run(Token)
