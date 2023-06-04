@@ -27,7 +27,7 @@ class Buttons(discord.ui.View):
         self.downvote_count = 0
 
     @discord.ui.button(
-        label="Yes", style=discord.ButtonStyle.success, emoji="👍"
+        label="Pierwsza Lista", style=discord.ButtonStyle.primary, emoji="👍"
     )
     async def upvote_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -54,7 +54,7 @@ class Buttons(discord.ui.View):
         embed.set_field_at(1, name="No", value=downvote_value, inline=False)
         await interaction.message.edit(embed=embed)
 
-    @discord.ui.button(label="No", style=discord.ButtonStyle.danger, emoji="👎")
+    @discord.ui.button(label="Trzecia Lista", style=discord.ButtonStyle.secondary, emoji="👎")
     async def downvote_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
@@ -85,12 +85,7 @@ class Buttons(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         await interaction.message.delete()
-        await interaction.response.send_message("Post deleted!", ephemeral=True)
-
-
-
-
-
+        await interaction.response.send_message("Post deleted!", ephemeral=True)\
 
 
 
@@ -111,6 +106,10 @@ async def on_ready():
 @client.tree.command(name="zapisy", description="Zapisy na mecz")
 async def signup(interaction: discord.Interaction, title: str, date: str, time: str, map: str,
                  tactics_url: str):
+    allowed_role_id = 1057298797149040711
+    if allowed_role_id not in [role.id for role in interaction.user.roles]:
+        await interaction.response.send_message("You don't have the required role to use this command.", ephemeral=True)
+        return
     embed = discord.Embed(title=title, description="Zapisy na mecz", color=discord.Color.blue())
     embed.add_field(name="Date and Vs", value=date, inline=False)
     embed.add_field(name="Time", value=time, inline=False)

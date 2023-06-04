@@ -1,0 +1,10 @@
+version: '3.10'
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hsr_bot
+    container_name: HSR_BOT
+    command: python main.py
+    restart: unless-stopped
