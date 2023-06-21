@@ -12,6 +12,7 @@ load_dotenv()
 
 Token = os.getenv('DISCORD_API_TOKEN')
 GUILD_ID = int(os.getenv('GUILD'))
+allowed_role_id = int(os.environ.get("ALLOWED_ROLE_ID"))
 
 client = commands.Bot(command_prefix="!", intents=discord.Intents.all())
 
@@ -137,7 +138,6 @@ async def on_ready():
 @client.tree.command(name="zapisy", description="Zapisy na mecz")
 async def signup(interaction: discord.Interaction, title: str, start: str, map: str, odcięcie:str, zbiórka:str,
                  tactics_url: str):
-    allowed_role_id = 1057298797149040711
     if allowed_role_id not in [role.id for role in interaction.user.roles]:
         await interaction.response.send_message("You don't have the required role to use this command.", ephemeral=True)
         return
