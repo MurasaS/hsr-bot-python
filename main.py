@@ -37,6 +37,7 @@ class Buttons(discord.ui.View):
                 self.upvote_count -= 1
             elif previous_vote == "novote":
                 self.novote_count -= 1
+            del self.voted_users[interaction.user.id]
 
         if (
             interaction.user.id not in self.voted_users
@@ -46,18 +47,8 @@ class Buttons(discord.ui.View):
             self.upvote_count += 1
             self.voted_users[interaction.user.id] = "upvote"
             await interaction.response.send_message("Upvoted!", ephemeral=True)
-        else:
-            del self.voted_users[interaction.user.id]
-            await interaction.response.send_message("Vote removed!", ephemeral=True)
 
-        embed = interaction.message.embeds[0]
-        upvote_value = f"Votes: {self.upvote_count}\nVoted by: {', '.join([str(interaction.guild.get_member(user_id)) for user_id, vote in self.voted_users.items() if vote == 'upvote'])}"
-        downvote_value = f"Votes: {self.downvote_count}\nVoted by: {', '.join([str(interaction.guild.get_member(user_id)) for user_id, vote in self.voted_users.items() if vote == 'downvote'])}"
-        novote_value = f"Votes: {self.novote_count}\nVoted by: {', '.join([str(interaction.guild.get_member(user_id)) for user_id, vote in self.voted_users.items() if vote == 'novote'])}"
-        embed.set_field_at(0, name="Pierwsza Lista", value=upvote_value, inline=False)
-        embed.set_field_at(1, name="Trzecia Lista", value=downvote_value, inline=False)
-        embed.set_field_at(2, name="Nie Będzie mnie", value=novote_value, inline=False)
-        await interaction.message.edit(embed=embed)
+        await self.update_embed(interaction)
 
     @discord.ui.button(label="Trzecia Lista", style=discord.ButtonStyle.secondary, emoji="👎")
     async def downvote_button(
@@ -65,12 +56,13 @@ class Buttons(discord.ui.View):
     ):
         if interaction.user.id in self.voted_users:
             previous_vote = self.voted_users[interaction.user.id]
-            if previous_vote == "upvote":
-                self.upvote_count -= 1
-            elif previous_vote == "downvote":
+            if previous_vote == "downvote":
                 self.downvote_count -= 1
+            elif previous_vote == "upvote":
+                self.upvote_count -= 1
             elif previous_vote == "novote":
                 self.novote_count -= 1
+            del self.voted_users[interaction.user.id]
 
         if (
             interaction.user.id not in self.voted_users
@@ -80,10 +72,46 @@ class Buttons(discord.ui.View):
             self.downvote_count += 1
             self.voted_users[interaction.user.id] = "downvote"
             await interaction.response.send_message("Downvoted!", ephemeral=True)
-        else:
-            del self.voted_users[interaction.user.id]
-            await interaction.response.send_message("Vote removed!", ephemeral=True)
 
+        await self.update_embed(interaction)
+
+    @discord.ui.button(label="Nie Będzie mnie", style=discord.ButtonStyle.blurple, emoji="❌")
+    async def no_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id in self.voted_users:
+            previous_vote = self.voted_users[interaction.user.id]
+            if previous_vote == "downvote":
+                self.downvote_count -= 1
+            elif previous_vote == "upvote":
+                self.upvote_count -= 1
+            elif previous_vote == "novote":
+                self.novote_count -= 1
+            del self.voted_users[interaction.user.id]
+
+        if (
+            interaction.user.id not in self.voted_users
+            or self.voted_users[interaction.user.id] == "upvote"
+            or self.voted_users[interaction.user.id] == "downvote"
+        ):
+            self.novote_count += 1
+            self.voted_users[interaction.user.id] = "novote"
+            await interaction.response.send_message("No vote recorded!", ephemeral=True)
+
+        await self.update_embed(interaction)
+
+    @discord.ui.button(label="Delete Post", style=discord.ButtonStyle.danger, emoji="🗑️")
+    async def delete_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not interaction.message.embeds or not interaction.message.embeds[0].author:
+            await interaction.response.send_message("Unable to delete the post.", ephemeral=True)
+            return
+
+        embed_author_id = interaction.message.embeds[0].author.icon_url.split("/")[-2]
+        if str(interaction.user.id) == embed_author_id:
+            await interaction.message.delete()
+            await interaction.response.send_message("Post deleted!", ephemeral=True)
+        else:
+            await interaction.response.send_message("You are not authorized to delete this post.", ephemeral=True)
+
+    async def update_embed(self, interaction: discord.Interaction):
         embed = interaction.message.embeds[0]
         upvote_value = f"Votes: {self.upvote_count}\nVoted by: {', '.join([str(interaction.guild.get_member(user_id)) for user_id, vote in self.voted_users.items() if vote == 'upvote'])}"
         downvote_value = f"Votes: {self.downvote_count}\nVoted by: {', '.join([str(interaction.guild.get_member(user_id)) for user_id, vote in self.voted_users.items() if vote == 'downvote'])}"
@@ -92,47 +120,6 @@ class Buttons(discord.ui.View):
         embed.set_field_at(1, name="Trzecia Lista", value=downvote_value, inline=False)
         embed.set_field_at(2, name="Nie będzie mnie", value=novote_value, inline=False)
         await interaction.message.edit(embed=embed)
-
-    @discord.ui.button(label="Nie Będzie mnie", style=discord.ButtonStyle.blurple, emoji="❌")
-    async def no_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id in self.voted_users:
-            previous_vote = self.voted_users[interaction.user.id]
-            if previous_vote == "upvote":
-                self.upvote_count -= 1
-            elif previous_vote == "downvote":
-                self.downvote_count -= 1
-            elif previous_vote == "novote":
-                self.novote_count -= 1
-
-        if (
-            interaction.user.id not in self.voted_users
-            or self.voted_users[interaction.user.id] == "upvote"
-            or self.voted_users[interaction.user.id] == "novote"
-        ):
-            self.novote_count += 1
-            self.voted_users[interaction.user.id] = "novote"
-            await interaction.response.send_message("No vote recorded!", ephemeral=True)
-        else:
-            del self.voted_users[interaction.user.id]
-            await interaction.response.send_message("Vote removed!", ephemeral=True)
-
-        embed = interaction.message.embeds[0]
-        upvote_value = f"Votes: {self.upvote_count}\nVoted by: {', '.join([str(interaction.guild.get_member(user_id)) for user_id, vote in self.voted_users.items() if vote == 'upvote'])}"
-        downvote_value = f"Votes: {self.downvote_count}\nVoted by: {', '.join([str(interaction.guild.get_member(user_id)) for user_id, vote in self.voted_users.items() if vote == 'downvote'])}"
-        novote_value = f"Votes: {self.novote_count}\nVoted by: {', '.join([str(interaction.guild.get_member(user_id)) for user_id, vote in self.voted_users.items() if vote == 'novote'])}"
-        embed.set_field_at(0, name="Pierwsza Lista", value=upvote_value, inline=False)
-        embed.set_field_at(1, name="Trzecia Lista", value=downvote_value, inline=False)
-        embed.set_field_at(2, name="Nie Będzie mnie", value=novote_value, inline=False)
-        await interaction.message.edit(embed=embed)
-
-
-    @discord.ui.button(label="Delete Post", style=discord.ButtonStyle.danger, emoji="🗑️")
-    async def delete_button(
-            self, interaction: discord.Interaction, button: discord.ui.Button
-    ):
-        await interaction.message.delete()
-        await interaction.response.send_message("Post deleted!", ephemeral=True)
-
 
 
 @client.event
