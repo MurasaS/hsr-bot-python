@@ -147,6 +147,9 @@ async def signup(interaction: discord.Interaction, title: str, start: str, map: 
     embed.add_field(name="Start", value=start, inline=False)
     embed.add_field(name="Mapa", value=map, inline=False)
 
+    footer_text = f"Zbiórka: {zbiórka} | Odcięcie: {odcięcie} | Start: {start} | Mapa: {map}"
+    embed.set_footer(text=footer_text)
+
     await interaction.response.send_message(embed=embed, view=Buttons())
 
 
