@@ -69,7 +69,7 @@ class Buttons(discord.ui.View):
             await self.handle_vote(interaction.user.id, "upvote")
             self.upvote_count += 1
 
-            await interaction.response.send_message("You upvoted!", ephemeral=True)
+            await interaction.response.send_message("You have singup for Pierwsza Lista!", ephemeral=True)
 
             await self.update_embed(interaction)
 
@@ -82,7 +82,7 @@ class Buttons(discord.ui.View):
         logger.info(f"Downvote button pressed by {interaction.user}")
         await self.handle_vote(interaction.user.id, "downvote")
         self.downvote_count += 1
-        await interaction.response.send_message("Downvoted!", ephemeral=True)
+        await interaction.response.send_message("You have singup for Trzecia Lista!", ephemeral=True)
         await self.update_embed(interaction)
 
     @discord.ui.button(label="Nie Będzie mnie", style=discord.ButtonStyle.blurple, emoji="❌")
@@ -90,7 +90,7 @@ class Buttons(discord.ui.View):
         logger.info(f"No button pressed by {interaction.user}")
         await self.handle_vote(interaction.user.id, "novote")
         self.novote_count += 1
-        await interaction.response.send_message("No vote recorded!", ephemeral=True)
+        await interaction.response.send_message("You have singup for Nie będzie mnie", ephemeral=True)
         await self.update_embed(interaction)
 
     @discord.ui.button(label="Delete Post", style=discord.ButtonStyle.danger, emoji="🗑️")
