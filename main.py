@@ -11,7 +11,8 @@ load_dotenv()
 
 Token = os.getenv('DISCORD_API_TOKEN')
 GUILD_ID = int(os.getenv('GUILD'))
-allowed_role_id = int(os.environ.get("ALLOWED_ROLE_ID"))
+allowed_role_id_1 = int(os.environ.get("ALLOWED_ROLE_ID_1"))
+allowed_role_id_2 = int(os.environ.get("ALLOWED_ROLE_ID_2"))
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -145,7 +146,7 @@ async def signup(interaction: discord.Interaction, title: str, start: str, map: 
     logger.info(f"Signup command called by {interaction.user} (ID: {interaction.user.id}) with title '{title}'")
 
     try:
-        if allowed_role_id not in [role.id for role in interaction.user.roles]:
+        if allowed_role_id_1 and allowed_role_id_2 not in [role.id for role in interaction.user.roles]:
             logger.warning(
                 f"User {interaction.user} (ID: {interaction.user.id}) don t have permission to do it.")
             await interaction.response.send_message("You don't have the required role to use this command.",
